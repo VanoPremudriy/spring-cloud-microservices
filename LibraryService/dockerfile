@@ -1,0 +1,12 @@
+FROM ubuntu:latest AS build
+RUN apt update
+COPY target/LibraryService-0.0.1-SNAPSHOT.jar /home/app/app.jar
+RUN echo "run"
+
+FROM openjdk:17-alpine as run
+COPY --from=build /home/app/app.jar /home/app/app.jar
+EXPOSE 8888
+ONBUILD ENTRYPOINT java -jar /home/app/app.jar
+
+FROM run
+

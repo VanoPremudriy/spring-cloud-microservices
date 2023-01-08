@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: config-server
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: config.server
+  - http:
+      paths:
+      - path: /config-server
+        pathType: Prefix
+        backend:
+          service: 
+            name: config-server
+            port: 
+              number: 8888
+      - path: /discovery-service
+        pathType: Prefix
+        backend:
+          service: 
+            name: discovery-service
+            port: 
+              number: 8080
+      - path: /library-service
+        pathType: Prefix
+        backend:
+          service: 
+            name: library-service
+            port: 
+              number: 8082
+      - path: /postgres-library
+        pathType: Prefix
+        backend:
+          service: 
+            name: postgres-library
+            port: 
+              number: 4444
+      - path: /client-service
+        pathType: Prefix
+        backend:
+          service: 
+            name: client-service
+            port: 
+              number: 8081

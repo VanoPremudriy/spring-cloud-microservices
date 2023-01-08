@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  labels:
+    app: postgres-library
+data:
+  POSTGRES_DB: library_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+
+---
+
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: postgres-library
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pv-claim
+  labels:
+    app: postgres-library
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-library
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-library
+  template:
+    metadata:
+      labels:
+        app: postgres-library
+    spec:
+      containers:
+        - name: postgres-library
+          image: postgres:10.4
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-config
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    visualize: "true"
+  name: postgres-library
+spec:
+  selector:
+    app: postgres-library
+  ports:
+  - name: http
+    protocol: TCP
+    port: 5432
+    targetPort: 5432
+  type: NodePort
+
+
+####################################################
+
+
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: library-service
+  name: library-service
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: library-service
+  template:
+    metadata:
+      labels:
+        app: library-service
+        visualize: "true"
+    spec:
+      containers:
+      - name: library-service
+        image: vanopremudriy/library:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8082
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    visualize: "true"
+  name: library-service
+spec:
+  selector:
+    app: library-service
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8082
+    targetPort: 8082
+  type: NodePort

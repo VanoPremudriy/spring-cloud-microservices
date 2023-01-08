@@ -1,0 +1,46 @@
+---
+#Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: discovery-service
+  name: discovery-service
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discovery-service
+  template:
+    metadata:
+      labels:
+        app: discovery-service
+        visualize: "true"
+    spec:
+      containers:
+      - name: discovery-service
+        image: vanopremudriy/discovery:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+
+---
+#Service
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    visualize: "true"
+  name: discovery-service
+spec:
+  selector:
+    app: discovery-service
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: NodePort
